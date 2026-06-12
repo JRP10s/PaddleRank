@@ -5,15 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Create Account - PaddleRank</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
-  <style>
-    body { background: #09090b; }
-  </style>
 </head>
-<body class="text-white min-h-screen flex items-center justify-center">
+<body class="bg-zinc-950 text-white min-h-screen flex items-center justify-center">
 
   <div class="max-w-md w-full mx-auto px-6 py-12">
-    <!-- Back Button -->
     <a href="index.html" class="inline-flex items-center text-zinc-400 hover:text-white mb-8">
       ← Back to Home
     </a>
@@ -22,64 +19,86 @@
       <div class="text-center mb-10">
         <h1 class="text-5xl font-bold mb-3">PaddleRank</h1>
         <p class="text-2xl font-light">Create your account</p>
-        <p class="text-zinc-400 mt-2">Start tracking your pickleball hours today</p>
       </div>
 
       <form id="signupForm" class="space-y-6">
         <div>
           <label class="block text-sm text-zinc-400 mb-2">Full Name</label>
-          <input type="text" id="name" required 
-                 class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-5 focus:outline-none focus:border-green-500 text-lg">
+          <input type="text" id="full_name" required class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-5">
         </div>
 
         <div>
           <label class="block text-sm text-zinc-400 mb-2">Email Address</label>
-          <input type="email" id="email" required 
-                 class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-5 focus:outline-none focus:border-green-500 text-lg">
+          <input type="email" id="email" required class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-5">
         </div>
 
         <div>
           <label class="block text-sm text-zinc-400 mb-2">Password</label>
-          <input type="password" id="password" required minlength="6"
-                 class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-5 focus:outline-none focus:border-green-500 text-lg">
+          <input type="password" id="password" required minlength="6" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-5">
         </div>
 
         <div>
-          <label class="block text-sm text-zinc-400 mb-2">Skill Level (Optional)</label>
-          <select id="skill" 
-                  class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-5 focus:outline-none focus:border-green-500 text-lg">
-            <option value="">Select your level</option>
-            <option value="2.5-3.0">2.5 - 2.9</option>
-            <option value="3.0-3.5" selected>3.0 - 3.4</option>
+          <label class="block text-sm text-zinc-400 mb-2">Skill Level</label>
+          <select id="skill_level" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-5">
+            <option value="3.0-3.5" selected>3.0 - 3.5</option>
+            <option value="2.5-3.0">2.5 - 3.0</option>
             <option value="3.5-4.0">3.5 - 4.0</option>
             <option value="4.0+">4.0+</option>
           </select>
         </div>
 
-        <button type="submit" 
-                class="w-full bg-green-600 hover:bg-green-500 py-6 rounded-3xl font-semibold text-xl transition mt-8">
+        <button type="submit" id="submitBtn"
+                class="w-full bg-green-600 hover:bg-green-500 py-6 rounded-3xl font-semibold text-xl transition">
           Create Free Account
         </button>
       </form>
-
-      <p class="text-center text-xs text-zinc-500 mt-8">
-        By creating an account, you agree to our Terms and Privacy Policy.<br>
-        Your data is secure.
-      </p>
     </div>
-
-    <p class="text-center text-zinc-500 text-sm mt-8">
-      Already have an account? <a href="#" class="text-green-400 hover:underline">Sign in</a>
-    </p>
   </div>
 
   <script>
-    document.getElementById('signupForm').addEventListener('submit', function(e) {
+    const supabaseUrl = 'https://YOUR_PROJECT_REF.supabase.co';   // ← You still need to replace this
+    const supabaseAnonKey = 'sb_publishable_lIlxAguIYp5mnmkfB09PMQ_4eFfLd02';
+
+    const supabase = Supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
-      const name = document.getElementById('name').value;
-      
-      alert(`🎉 Welcome to PaddleRank, ${name.split(" ")[0]}!\n\nYour account has been created.\n\n(Next step: We'll build the actual dashboard soon)`);
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.textContent = "Creating account...";
+      submitBtn.disabled = true;
+
+      const full_name = document.getElementById('full_name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const skill_level = document.getElementById('skill_level').value;
+
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email: email,
+          password: password,
+          options: { data: { full_name: full_name } }
+        });
+
+        if (error) throw error;
+
+        if (data.user) {
+          await supabase.from('profiles').insert({
+            id: data.user.id,
+            full_name: full_name,
+            skill_level: skill_level
+          });
+        }
+
+        alert("✅ Account created successfully!\n\nCheck your email to confirm (if required), then return to sign in.");
+        window.location.href = "index.html";
+
+      } catch (error) {
+        alert("Error: " + error.message);
+      } finally {
+        submitBtn.textContent = "Create Free Account";
+        submitBtn.disabled = false;
+      }
     });
   </script>
 </body>
