@@ -38,12 +38,12 @@
         </div>
 
         <div>
-          <label class="block text-sm text-zinc-400 mb-2">Skill Level</label>
-          <select id="skill_level" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-5">
+          <label class="block text-sm text-zinc-400 mb-2">Pickleball Skill Level</label>
+          <select id="skill_level" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-5 text-lg">
             <option value="3.0-3.4" selected>3.0 - 3.4</option>
             <option value="2.5-2.9">2.5 - 2.9</option>
             <option value="3.5-3.9">3.5 - 3.9</option>
-            <option value="4.0-4.4">4.0-4.4</option>
+            <option value="4.0-4.4">4.0 - 4.4</option>
             <option value="4.5+">4.5+</option>
           </select>
         </div>
@@ -64,9 +64,8 @@
 
     document.getElementById('signupForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      
+
       const submitBtn = document.getElementById('submitBtn');
-      const originalText = submitBtn.textContent;
       submitBtn.textContent = "Creating account...";
       submitBtn.disabled = true;
 
@@ -76,43 +75,29 @@
       const skill_level = document.getElementById('skill_level').value;
 
       try {
-        console.log("Starting signup...");
-
         const { data, error } = await supabase.auth.signUp({
           email: email,
           password: password,
-          options: { 
-            data: { full_name: full_name } 
-          }
+          options: { data: { full_name: full_name } }
         });
 
-        if (error) {
-          console.error("Auth Error:", error);
-          throw error;
-        }
-
-        console.log("User created:", data.user);
+        if (error) throw error;
 
         if (data.user) {
-          const { error: profileError } = await supabase.from('profiles').insert({
+          await supabase.from('profiles').insert({
             id: data.user.id,
             full_name: full_name,
             skill_level: skill_level
           });
-
-          if (profileError) {
-            console.error("Profile Error:", profileError);
-          }
         }
 
-        alert("✅ Account created successfully!\n\nPlease check your email for confirmation.");
+        alert("✅ Account created successfully!\n\nPlease check your email to confirm your account.");
         window.location.href = "index.html";
 
       } catch (error) {
-        console.error("Full Error:", error);
-        alert("Signup failed: " + error.message);
+        alert("Error creating account: " + error.message);
       } finally {
-        submitBtn.textContent = originalText;
+        submitBtn.textContent = "Create Free Account";
         submitBtn.disabled = false;
       }
     });
